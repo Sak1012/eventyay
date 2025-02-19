@@ -14,6 +14,7 @@ from pycountry import currencies
 from . import __version__
 from .helpers.config import EnvOrParserConfig
 from .settings_helpers import build_db_tls_config, build_redis_tls_config
+from corsheaders.defaults import default_headers
 
 from django.contrib.messages import constants as messages  # NOQA
 from django.utils.translation import gettext_lazy as _  # NOQA
@@ -111,7 +112,7 @@ if config.has_section('replica'):
     }
     DATABASE_ROUTERS = ['pretix.helpers.database.ReplicaRouter']
 
-BASE_PATH = config.get('pretix', 'base_path', fallback='/tickets')
+BASE_PATH = "" 
 
 FORCE_SCRIPT_NAME = BASE_PATH
 
@@ -381,6 +382,7 @@ CORE_MODULES = {
 }
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'pretix.api.middleware.IdempotencyMiddleware',
     'pretix.multidomain.middlewares.MultiDomainMiddleware',
@@ -401,6 +403,21 @@ MIDDLEWARE = [
 ]
 
 # Configure CORS for testing
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:8080',
+] # If this is used, then not need to use `CORS_ALLOW_ALL_ORIGINS = True`
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    'http://localhost:8080',
+    'https://deploy-preview-22--eventyay-checkin.netlify.app',
+]
+
+
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    'exhibitor',
+]
+
+CORS_ALLOW_ALL_ORIGINS = True # If this is used then `CORS_ALLOWED_ORIGINS` will not have any effect
+CORS_ALLOW_CREDENTIALS = True
 
 # Configure the authentication backends
 AUTHENTICATION_BACKENDS = (

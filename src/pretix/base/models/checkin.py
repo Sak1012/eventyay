@@ -201,6 +201,9 @@ class Checkin(models.Model):
         (TYPE_ENTRY, _('Entry')),
         (TYPE_EXIT, _('Exit')),
     )
+
+    REASON_INVALID = 'invalid'
+
     position = models.ForeignKey('pretixbase.OrderPosition', related_name='checkins', on_delete=models.CASCADE)
     datetime = models.DateTimeField(default=now)
     nonce = models.CharField(max_length=190, null=True, blank=True)

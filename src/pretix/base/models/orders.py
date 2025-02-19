@@ -2093,11 +2093,11 @@ class OrderPosition(AbstractPosition):
             return '#{} – {} – {}'.format(
                 self.positionid, str(self.item), str(self.variation)
             )
-        return '#{} – {}'.format(self.positionid, str(self.item))
+        return '#{} – {} - {}'.format(self.positionid, str(self.item), self.secret)
 
     def __repr__(self):
-        return '<OrderPosition: item %d, variation %d for order %s>' % (
-            self.item.id, self.variation.id if self.variation else 0, self.order_id
+        return '<OrderPosition: item %d, variation %d for order %s with secret : %s>' % (
+            self.item.id, self.variation.id if self.variation else 0, self.order_id, self.secret
         )
 
     def _calculate_tax(self, tax_rule=None):

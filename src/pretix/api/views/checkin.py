@@ -474,7 +474,6 @@ def _redeem_process(*, checkinlists, raw_barcode, answers_data, dateandtime,
                     user, auth, expand, pdf_data, request, questions_supported,
                     canceled_supported, source_type='barcode',
                     legacy_url_support=False, simulate=False, gate=None):
-
     list_by_event = _validate_checkinlists(checkinlists)
 
     device = auth if isinstance(auth, Device) else None
@@ -502,7 +501,11 @@ def _redeem_process(*, checkinlists, raw_barcode, answers_data, dateandtime,
     )
 
     q = _build_search_query(raw_barcode, untrusted_input, legacy_url_support)
+    print('\n',q,'\n')
+    for i in queryset:
+        print('\n',i,'\n')
     op_candidates = list(queryset.filter(q))
+    print('\n',op_candidates,'\n')
 
     if not op_candidates:
         revoked = list(RevokedTicketSecret.objects.filter(
@@ -916,7 +919,7 @@ class CheckinRedeemView(views.APIView):
     def post(self, request, *args, **kwargs):
         auth = self.request.auth
         user = self.request.user
-
+        print(request.data)
         if isinstance(auth, (TeamAPIToken, Device)):
             events = auth.get_events_with_permission(('can_change_orders', 'can_checkin_orders'))
         elif user.is_authenticated:
