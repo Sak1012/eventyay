@@ -48,7 +48,8 @@ class CheckoutView(View):
         if request.event.settings.require_registered_account_for_tickets and not request.user.is_authenticated:
             messages.info(request, _('Please log in to complete your order.'))
             # Build the current checkout URL to return to after login
-            next_url = request.get_full_path()
+            # Use request.path instead of get_full_path() to prevent open redirect attacks
+            next_url = request.path
             login_url = reverse('eventyay_common:auth.login')
             redirect_url = f'{login_url}?{urlencode({"next": next_url})}'
             logger.info('Redirecting to login as require_registered_account_for_tickets is enabled.')
