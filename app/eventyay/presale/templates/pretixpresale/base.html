@@ -49,6 +49,9 @@
     <meta name="msapplication-TileColor" content="{{ settings.primary_color|default:"#2185d0" }}">
     <meta name="msapplication-config" content="{% url "presale:browserconfig.xml" %}">
     <meta name="theme-color" content="{{ settings.primary_color|default:"#2185d0" }}">
+    {% if request.event and request.event.display_settings.header_pattern %}
+        <link rel="stylesheet" type="text/css" href="{% static "common/css/headers-uncompressed.css" %}" />
+    {% endif %}
     {% compress js %}
         <script type="text/javascript" src="{% static "pretixpresale/js/ui/popover.js" %}"></script>
         <script type="text/javascript" src="{% static "utils/js/utils.js" %}"></script>
@@ -56,7 +59,7 @@
 </head>
 <body class="nojs" data-locale="{{ request.LANGUAGE_CODE }}" data-now="{% now "U.u" %}" data-datetimeformat="{{ js_datetime_format }}" data-timeformat="{{ js_time_format }}" data-dateformat="{{ js_date_format }}" data-datetimelocale="{{ js_locale }}" data-currency="{{ request.event.currency }}">
 {{ html_page_header|safe }}
-    <div id="top-bg" class="header bg-primary">
+    <div id="top-bg" class="header {{ request.event.display_settings.header_pattern|default:"bg-primary" }}">
         {% if event_logo %}
             {# We use full image because the user may use big screen #}
             <img id="header-image" src="{{ MEDIA_PREFIX }}{{ event_logo }}" alt="{{ event.name }}" class="event-logo" />
