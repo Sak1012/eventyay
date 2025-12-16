@@ -1183,7 +1183,7 @@ DEFAULT_SETTINGS = {
             label=_('Require user to be logged in to place an order'),
             help_text=_(
                 'If this option is turned on, users must be logged in before completing an order. '
-                'When a user clicks "Checkout" without being logged in, a login popup will appear. '
+                'When a user clicks "Checkout" without being logged in, they will be redirected to the login page. '
                 "The 'Continue as a Guest' option will not be available for attendees."
             ),
         ),
