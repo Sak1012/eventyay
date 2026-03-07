@@ -38,7 +38,7 @@ from django.utils import formats
 from django.utils.functional import cached_property
 from django.utils.http import url_has_allowed_host_and_scheme as is_safe_url
 from django.utils.timezone import make_aware, now
-from django.utils.translation import gettext
+from django.utils.translation import gettext, ngettext
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import (
     DetailView,
@@ -277,6 +277,90 @@ class OrderList(OrderSearchMixin, EventPermissionRequiredMixin, PaginationMixin,
     @cached_property
     def filter_form(self):
         return EventOrderFilterForm(data=self.request.GET, event=self.request.event)
+
+
+class OrderBulkAction(EventPermissionRequiredMixin, View):
+    permission = 'can_change_orders'
+
+    def _redirect_back(self):
+        if 'next' in self.request.POST and is_safe_url(self.request.POST.get('next'), allowed_hosts=None):
+            return redirect(self.request.POST.get('next'))
+        return redirect(
+            'control:event.orders',
+            event=self.request.event.slug,
+            organizer=self.request.event.organizer.slug,
+        )
+
+    def post(self, *args, **kwargs):
+        action = self.request.POST.get('action')
+        if action not in ('approve', 'deny'):
+            messages.error(self.request, _('Please select a valid action.'))
+            return self._redirect_back()
+
+        selected_codes = [code.strip().upper() for code in self.request.POST.getlist('order') if code.strip()]
+        selected_codes = list(dict.fromkeys(selected_codes))
+
+        if not selected_codes:
+            messages.error(self.request, _('Please select at least one order.'))
+            return self._redirect_back()
+
+        try:
+            with transaction.atomic():
+                selected_orders = list(
+                    self.request.event.orders.select_for_update().filter(code__in=selected_codes)
+                )
+                if len(selected_orders) != len(selected_codes):
+                    messages.error(self.request, _('At least one selected order does not exist anymore.'))
+                    return self._redirect_back()
+
+                selected_by_code = {order.code: order for order in selected_orders}
+                selected_orders = [selected_by_code[code] for code in selected_codes]
+
+                invalid = [
+                    order.code
+                    for order in selected_orders
+                    if order.status != Order.STATUS_PENDING or not order.require_approval
+                ]
+                if invalid:
+                    messages.error(
+                        self.request,
+                        _('Bulk actions are only possible if all selected orders are pending approval.'),
+                    )
+                    return self._redirect_back()
+
+                for order in selected_orders:
+                    if action == 'approve':
+                        approve_order(order, user=self.request.user)
+                    else:
+                        deny_order(order, user=self.request.user)
+        except OrderError as e:
+            messages.error(self.request, str(e))
+            return self._redirect_back()
+
+        if action == 'approve':
+            messages.success(
+                self.request,
+                ngettext(
+                    '%(count)d order has been approved.',
+                    '%(count)d orders have been approved.',
+                    len(selected_orders),
+                )
+                % {'count': len(selected_orders)},
+            )
+        else:
+            messages.success(
+                self.request,
+                ngettext(
+                    '%(count)d order has been denied and is now canceled.',
+                    '%(count)d orders have been denied and are now canceled.',
+                    len(selected_orders),
+                )
+                % {'count': len(selected_orders)},
+            )
+        return self._redirect_back()
+
+    def get(self, *args, **kwargs):
+        return HttpResponseNotAllowed(['POST'])
 
 
 class OrderView(EventPermissionRequiredMixin, DetailView):
